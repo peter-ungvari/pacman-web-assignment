@@ -20,7 +20,8 @@ imageStore = {
 	mobRed: {src: "image/red.png"},
 	mobOrange: {src: "image/orange.png"},
 	mobCyan: {src: "image/cyan.png"},
-	mobPink: {src: "image/pink.png"}
+	mobPink: {src: "image/pink.png"},
+	mobBlue: {src: "image/blue.png"}
 };
 
 var canvas = document.getElementById("myCanvas");
@@ -87,8 +88,6 @@ function activateMob() {
 		mob.sleep = false;
 		setCell(mob);
 		drawCell(mob.row, mob.col);
-	} else {
-		clearInterval(mobActivator);
 	}
 }
 
@@ -125,6 +124,7 @@ function loadImages(imageStore, callback) {
 
 function drawCell(row, col) {
 	var matrix = playground.cells
+	var image;
 	switch(matrix[row][col]) {
 		case "FOOD": 
 			drawFood(row, col); 
@@ -132,29 +132,37 @@ function drawCell(row, col) {
 		case "POWER": 
 			drawPower(row, col); 
 			break;
-		case "PMAN-L": 
-			drawPackman(imageStore.packmanLeft.image, row, col);
+		case "PMAN-L":
+			image = imageStore.packmanLeft.image;
+			drawPackman(image, row, col);
 			break;
-		case "PMAN-R": 
-			drawPackman(imageStore.packmanRight.image, row, col);
+		case "PMAN-R":
+			image = imageStore.packmanRight.image;
+			drawPackman(image, row, col);
 			break;
-		case "PMAN-U": 
-			drawPackman(imageStore.packmanUp.image, row, col);
+		case "PMAN-U":
+			image = imageStore.packmanUp.image;
+			drawPackman(image, row, col);
 			break;
-		case "PMAN-D": 
-			drawPackman(imageStore.packmanDown.image, row, col);
+		case "PMAN-D":
+			image = imageStore.packmanDown.image;
+			drawPackman(image, row, col);
 			break;
 		case "MON-R":
-			drawMonster(imageStore.mobRed.image, row, col);
+			image = powerMode ? imageStore.mobBlue.image : imageStore.mobRed.image;
+			drawMonster(image, row, col);
 			break;
 		case "MON-O":
-			drawMonster(imageStore.mobOrange.image, row, col);
+			image = powerMode ? imageStore.mobBlue.image : imageStore.mobOrange.image;
+			drawMonster(image, row, col);
 			break;
 		case "MON-C":
-			drawMonster(imageStore.mobCyan.image, row, col);
+			image = powerMode ? imageStore.mobBlue.image : imageStore.mobCyan.image;
+			drawMonster(image, row, col);
 			break;
 		case "MON-P":
-			drawMonster(imageStore.mobPink.image, row, col);
+			image = powerMode ? imageStore.mobBlue.image : imageStore.mobPink.image;
+			drawMonster(image, row, col);
 			break;
 	}
 }
@@ -185,18 +193,18 @@ function moveMonsters() {
 						target = {row: mob.row+1, col: mob.col, 
 							type: playground.cells[mob.row+1][mob.col]};
 						break;
-					case 3:
+					case 2:
 						target = {row: mob.row, col: mob.col-1, 
 							type: playground.cells[mob.row][mob.col-1]};
 						break;
-					case 4:
+					case 3:
 						target = {row: mob.row, col: mob.col+1, 
 							type: playground.cells[mob.row][mob.col+1]};
 						break;
 				}
 				canMove = target.type != "WALL" && Math.floor(Math.random() * 3) > 0;
 				if(!canMove) {
-					mob.direction = Math.floor(Math.random() * 5);
+					mob.direction = (mob.direction + Math.floor(Math.random() * 3) + 1) % 4;
 				}
 			}
 			if(target.type.substr(0,4) == "PMAN") {
@@ -316,11 +324,13 @@ function meeting(mob) {
 function win() {
 	alert('Nyertel. Pontszamod: ' + score);
 	clearInterval(timer);
+	clearInterval(mobActivator);
 }
 
 function loose() {
 	alert('Vesztettel.');
 	clearInterval(timer);
+	clearInterval(mobActivator);
 }
 
 function drawFood(row, col) {
