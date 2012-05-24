@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<body style="background: #102030">
+
+<div style="width: 360px; height: 420px; margin: 20px auto">
+	<canvas id="myCanvas" width="360px" height="420px" style="border: none;">
+		Your browser does not support the canvas element.
+	</canvas>
+</div>
+
+<script type="text/javascript">
+var imageStore = {
+	map: {src: "image/map2.png"},
+	food: {src: "image/food.png"},
+	power: {src: "image/power.png"}
+};
+
+var backgroundImage = new Image();
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
+
+loadImages(imageStore, function() {
+	ctx.drawImage(imageStore.map.image, 0, 0);
+	var playground = initPlayground();
+	initCells(playground);
+	for(var i = 0; i < playground.height; ++i) {
+		for(var j = 0; j < playground.width; ++j) {
+			drawCell(ctx, imageStore, playground.cells, i, j);
+		}
+	}
+});
+
+function loadImages(imageStore, callback) {
+	var loadedImages = 0;
+	var numImages = Object.keys(imageStore).length;
+	for(var elem in imageStore) {
+		var current = imageStore[elem];
+		current.image = new Image();
+		current.image.onload = function() {
+			if(++loadedImages >= numImages) {
+				callback();
+			}
+		};
+		current.image.src = current.src;
+	}
+}
+
+function drawCell(ctx, imageStore, matrix, row, col) {
+	switch(matrix[row][col]) {
+		case "FOOD": drawFood(ctx, imageStore, row, col); break;
+		case "POWER": drawPower(ctx, imageStore, row, col); break;
+	}
+}
+
+function drawFood(ctx, imageStore, row, col) {
+	var offX = col * 12 + 12;
+	var offY = row * 12 + 13;
+	ctx.drawImage(imageStore.food.image, offX, offY);
+}
+
+function drawPower(ctx, imageStore, row, col) {
+	var offX = col * 12 + 12;
+	var offY = row * 12 + 13;
+	ctx.drawImage(imageStore.power.image, offX, offY);
+}
+ 
+function initPlayground() {
+	var playground = { width: 28, height: 31};
+	playground.cells = new Array(playground.height);
+	for(var i = 0; i < playground.height; ++i) {
+		playground.cells[i] = new Array(playground.width);
+	}
+	return playground;
+}
+
+function initCells(playground) {
+	var cells = playground.cells;
+	var map = [
+		"WWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+		"W............WW............W",
+		"W.WWWW.WWWWW.WW.WWWWW.WWWW.W",
+		"WPWWWW.WWWWW.WW.WWWWW.WWWWPW",
+		"W.WWWW.WWWWW.WW.WWWWW.WWWW.W",
+		"W..........................W",
+		"W.WWWW.WW.WWWWWWWW.WW.WWWW.W",
+		"W.WWWW.WW.WWWWWWWW.WW.WWWW.W",
+		"W......WW....WW....WW......W",
+		"WWWWWW.WWWWW WW WWWWW.WWWWWW",
+		"WWWWWW.WWWWW WW WWWWW.WWWWWW",
+		"WWWWWW.WW          WW.WWWWWW",
+		"WWWWWW.WW WWWWWWWW WW.WWWWWW",
+		"WWWWWW.WW WWWWWWWW WW.WWWWWW",
+		"      .   WWWWWWWW   .      ",
+		"WWWWWW.WW WWWWWWWW WW.WWWWWW",
+		"WWWWWW.WW WWWWWWWW WW.WWWWWW",
+		"WWWWWW.WW          WW.WWWWWW",
+		"WWWWWW.WW WWWWWWWW WW.WWWWWW",
+		"WWWWWW.WW WWWWWWWW WW.WWWWWW",
+		"W............WW............W",
+		"W.WWWW.WWWWW.WW.WWWWW.WWWW.W",
+		"W.WWWW.WWWWW.WW.WWWWW.WWWW.W",
+		"WP..WW.......  .......WW..PW",
+		"WWW.WW.WW.WWWWWWWW.WW.WW.WWW",
+		"WWW.WW.WW.WWWWWWWW.WW.WW.WWW",
+		"W......WW....WW....WW......W",
+		"W.WWWWWWWWWW.WW.WWWWWWWWWW.W",
+		"W.WWWWWWWWWW.WW.WWWWWWWWWW.W",
+		"W..........................W",
+		"WWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+	];
+	for(var i = 0; i < playground.height; ++i) {
+		for(var j = 0; j < playground.width; ++j) {
+			switch(map[i].charAt(j)) {
+				case " ": cells[i][j] = "EMPTY"; break;
+				case ".": cells[i][j] = "FOOD"; break;
+				case "W": cells[i][j] = "WALL"; break;
+				case "P": cells[i][j] = "POWER"; break;
+			}
+		}
+	}
+}
+
+</script>
+</body>
+</html>
