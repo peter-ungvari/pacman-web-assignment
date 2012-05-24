@@ -10,7 +10,7 @@
 
 <script type="text/javascript">
 imageStore = {
-	map: {src: "image/map2.png"},
+	map: {src: "image/map3.png"},
 	food: {src: "image/food.png"},
 	power: {src: "image/power.png"},
 	packmanLeft: {src: "image/packman-left.png"},
@@ -28,6 +28,7 @@ var canvas = document.getElementById("myCanvas");
 ctx = canvas.getContext("2d");
 playground = initPlayground();
 powerMode = false;
+powerTimeout = null;
 score = 0;
 packman = {row: 23, col: 14, type: "PMAN-L"};
 monsters = {
@@ -56,7 +57,6 @@ document.onkeydown = function(e) {
 			break;
 	}
 	clearCell(packman.row, packman.col);
-	setCell(packman);
 	drawCell(packman.row, packman.col);
 }
 
@@ -86,13 +86,8 @@ function activateMob() {
 		mob.row = 11;
 		mob.col = 13;
 		mob.sleep = false;
-		setCell(mob);
 		drawCell(mob.row, mob.col);
 	}
-}
-
-function setCell(obj) {
-	playground.cells[obj.row][obj.col] = obj.type;
 }
 
 function countFood() {
@@ -132,43 +127,54 @@ function drawCell(row, col) {
 		case "POWER": 
 			drawPower(row, col); 
 			break;
-		case "PMAN-L":
-			image = imageStore.packmanLeft.image;
-			drawPackman(image, row, col);
+	}
+	if(packman.row == row && packman.col == col) {
+		switch(packman.type) {
+			case "PMAN-L":
+				image = imageStore.packmanLeft.image;
+				drawPackman(image, row, col);
+				break;
+			case "PMAN-R":
+				image = imageStore.packmanRight.image;
+				drawPackman(image, row, col);
+				break;
+			case "PMAN-U":
+				image = imageStore.packmanUp.image;
+				drawPackman(image, row, col);
+				break;
+			case "PMAN-D":
+				image = imageStore.packmanDown.image;
+				drawPackman(image, row, col);
+				break;
+		}
+	}
+	for(cur in monsters) {
+		var mob = monsters[cur];
+		if(mob.row == row && mob.col == col) {
+			switch(mob.type) {
+				case "MON-R":
+					image = powerMode ? imageStore.mobBlue.image : imageStore.mobRed.image;
+					drawMonster(image, row, col);
+					break;
+				case "MON-O":
+					image = powerMode ? imageStore.mobBlue.image : imageStore.mobOrange.image;
+					drawMonster(image, row, col);
+					break;
+				case "MON-C":
+					image = powerMode ? imageStore.mobBlue.image : imageStore.mobCyan.image;
+					drawMonster(image, row, col);
+					break;
+				case "MON-P":
+					image = powerMode ? imageStore.mobBlue.image : imageStore.mobPink.image;
+					drawMonster(image, row, col);
+					break;
+			}
 			break;
-		case "PMAN-R":
-			image = imageStore.packmanRight.image;
-			drawPackman(image, row, col);
-			break;
-		case "PMAN-U":
-			image = imageStore.packmanUp.image;
-			drawPackman(image, row, col);
-			break;
-		case "PMAN-D":
-			image = imageStore.packmanDown.image;
-			drawPackman(image, row, col);
-			break;
-		case "MON-R":
-			image = powerMode ? imageStore.mobBlue.image : imageStore.mobRed.image;
-			drawMonster(image, row, col);
-			break;
-		case "MON-O":
-			image = powerMode ? imageStore.mobBlue.image : imageStore.mobOrange.image;
-			drawMonster(image, row, col);
-			break;
-		case "MON-C":
-			image = powerMode ? imageStore.mobBlue.image : imageStore.mobCyan.image;
-			drawMonster(image, row, col);
-			break;
-		case "MON-P":
-			image = powerMode ? imageStore.mobBlue.image : imageStore.mobPink.image;
-			drawMonster(image, row, col);
-			break;
+		}
 	}
 }
 
 function clearCell(row, col) {
-	playground.cells[row][col] = "EMPTY";
 	ctx.clearRect(col * 12 + 8, row * 12 + 8, 20, 20);
 }
 
@@ -182,38 +188,53 @@ function moveMonsters() {
 		var mob = monsters[cur];
 		if(!mob.sleep) {
 			var canMove = false;
-			var target = {};
+			var targetType = {};
+			var targetCol;
+			var targetRow;
 			while(!canMove) {
+				targetCol = mob.col;
+				targetRow = mob.row;
 				switch(mob.direction) {
 					case 0:
-						target = {row: mob.row-1, col: mob.col, 
-							type: playground.cells[mob.row-1][mob.col]};
+						--targetRow;
+						if(targetRow < 0) {
+							targetRow = playground.height;
+						}
 						break;
 					case 1:
-						target = {row: mob.row+1, col: mob.col, 
-							type: playground.cells[mob.row+1][mob.col]};
+						++targetRow;
+						if(targetRow >= playground.height) {
+							targetRow = 0;
+						}
 						break;
 					case 2:
-						target = {row: mob.row, col: mob.col-1, 
-							type: playground.cells[mob.row][mob.col-1]};
+						--targetCol;
+						if(targetCol < 0) {
+							targetCol = playground.width;
+						}
 						break;
 					case 3:
-						target = {row: mob.row, col: mob.col+1, 
-							type: playground.cells[mob.row][mob.col+1]};
+						++targetCol;
+						if(targetCol >= playground.width) {
+							targetCol = 0;
+						}
 						break;
 				}
-				canMove = target.type != "WALL" && Math.floor(Math.random() * 3) > 0;
+				targetType = playground.cells[targetRow][targetCol];
+				canMove = targetType != "WALL" && Math.floor(Math.random() * 3) > 0;
 				if(!canMove) {
 					mob.direction = (mob.direction + Math.floor(Math.random() * 3) + 1) % 4;
 				}
 			}
-			if(target.type.substr(0,4) == "PMAN") {
+			if(packman.row == targetRow && packman.col == targetCol) {
 				meeting(mob);
 			} else {
-				clearCell(mob.row, mob.col);
-				mob.row = target.row;
-				mob.col = target.col;
-				setCell(mob);
+				var oldRow = mob.row;
+				var oldCol = mob.col;
+				mob.row = targetRow;
+				mob.col = targetCol;
+				clearCell(oldRow, oldCol);
+				drawCell(oldRow, oldCol);
 				drawCell(mob.row, mob.col);
 			}
 		}
@@ -242,7 +263,6 @@ function goHome(mob) {
 			mobAtHome = monsters.pink;
 			break;
 	}
-	setCell(mobAtHome);
 	drawCell(mobAtHome.row, mobAtHome.col);
 }
 
@@ -278,18 +298,6 @@ function movePackman() {
 	switch(playground.cells[nextCell.row][nextCell.col]) {
 		case "EMPTY":
 			break;
-		case "MON-R":
-			meeting(monsters.red);
-			break;
-		case "MON-O":
-			meeting(monsters.orange);
-			break;
-		case "MON-P":
-			meeting(monsters.pink);
-			break;
-		case "MON-C":
-			meeting(monsters.cyan);
-			break;
 		case "WALL":
 			canMove = false;
 			break;
@@ -301,14 +309,38 @@ function movePackman() {
 			}
 			break;
 		case "POWER":
+			if(powerTimeout) {
+				clearTimeout(powerTimeout);
+			}
 			powerMode = true;
+			powerTimeout = setTimeout("powerMode = false", 10000);
 			break;
+	}
+	for(cur in monsters) {
+		var mob = monsters[cur];
+		if(mob.row == nextCell.row && mob.col == nextCell.col) {
+			switch(mob.type) {
+				case "MON-R":
+					meeting(monsters.red);
+					break;
+				case "MON-O":
+					meeting(monsters.orange);
+					break;
+				case "MON-C":
+					meeting(monsters.pink);
+					break;
+				case "MON-P":
+					meeting(monsters.cyan);
+					break;
+			}
+			break;
+		}
 	}
 	if(canMove) {
 		clearCell(packman.row, packman.col);
 		packman.col = nextCell.col;
 		packman.row = nextCell.row;
-		playground.cells[packman.row][packman.col] = packman.type;
+		playground.cells[packman.row][packman.col] = "EMPTY";
 		drawCell(packman.row, packman.col);
 	}
 }
@@ -410,10 +442,6 @@ function initCells(playground) {
 				case "P": cells[i][j] = "POWER"; break;
 			}
 		}
-	}
-	setCell(packman);
-	for(var mob in monsters) {
-		setCell(monsters[mob]);
 	}
 }
 
