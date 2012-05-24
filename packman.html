@@ -30,10 +30,10 @@ powerMode = false;
 score = 0;
 packman = {row: 23, col: 14, type: "PMAN-L"};
 monsters = {
-	red:    {row: 14, col: 12, type: "MON-R", sleep: true},
-	orange: {row: 14, col: 13, type: "MON-O", sleep: true},
-	cyan:   {row: 14, col: 14, type: "MON-C", sleep: true},
-	pink:   {row: 14, col: 15, type: "MON-P", sleep: true}
+	red:    {row: 14, col: 12, type: "MON-R", sleep: true, direction: 0},
+	orange: {row: 14, col: 13, type: "MON-O", sleep: true, direction: 0},
+	cyan:   {row: 14, col: 14, type: "MON-C", sleep: true, direction: 0},
+	pink:   {row: 14, col: 15, type: "MON-P", sleep: true, direction: 0}
 };
 initCells(playground);
 foodCount = countFood();
@@ -54,6 +54,9 @@ document.onkeydown = function(e) {
 			packman.type = "PMAN-D";
 			break;
 	}
+	clearCell(packman.row, packman.col);
+	setCell(packman);
+	drawCell(packman.row, packman.col);
 }
 
 loadImages(imageStore, function() {
@@ -63,13 +66,13 @@ loadImages(imageStore, function() {
 			drawCell(i, j);
 		}
 	}
-	timer = setInterval(movePackman, 400);
+	timer = setInterval(move, 200);
 	mobActivator = setInterval(activateMob, 3000);
 });
 
 function activateMob() {
 	var mob = null;
-	for(cur in monsters) {
+	for(var cur in monsters) {
 		if(monsters[cur].sleep) {
 			mob = monsters[cur];
 			break;
@@ -90,7 +93,7 @@ function activateMob() {
 }
 
 function setCell(obj) {
-	playground.cells[obj.row][obj.col] = obj.type
+	playground.cells[obj.row][obj.col] = obj.type;
 }
 
 function countFood() {
@@ -161,6 +164,80 @@ function clearCell(row, col) {
 	ctx.clearRect(col * 12 + 8, row * 12 + 8, 20, 20);
 }
 
+function move() {
+	movePackman();
+	moveMonsters();
+}
+
+function moveMonsters() {
+	for(var cur in monsters) {
+		var mob = monsters[cur];
+		if(!mob.sleep) {
+			var canMove = false;
+			var target = {};
+			while(!canMove) {
+				switch(mob.direction) {
+					case 0:
+						target = {row: mob.row-1, col: mob.col, 
+							type: playground.cells[mob.row-1][mob.col]};
+						break;
+					case 1:
+						target = {row: mob.row+1, col: mob.col, 
+							type: playground.cells[mob.row+1][mob.col]};
+						break;
+					case 3:
+						target = {row: mob.row, col: mob.col-1, 
+							type: playground.cells[mob.row][mob.col-1]};
+						break;
+					case 4:
+						target = {row: mob.row, col: mob.col+1, 
+							type: playground.cells[mob.row][mob.col+1]};
+						break;
+				}
+				canMove = target.type != "WALL" && Math.floor(Math.random() * 3) > 0;
+				if(!canMove) {
+					mob.direction = Math.floor(Math.random() * 5);
+				}
+			}
+			if(target.type.substr(0,4) == "PMAN") {
+				meeting(mob);
+			} else {
+				clearCell(mob.row, mob.col);
+				mob.row = target.row;
+				mob.col = target.col;
+				setCell(mob);
+				drawCell(mob.row, mob.col);
+			}
+		}
+	}
+}
+
+function goHome(mob) {
+	score += 100;
+	clearCell(mob.row, mob.col);
+	var mobAtHome = {};
+	switch(mob.type) {
+		case "MON-R":
+			monsters.red = {row: 14, col: 12, type: "MON-R", sleep: true, direction: 0};
+			mobAtHome = monsters.red;
+			break;
+		case "MON-O":
+			monsters.orange = {row: 14, col: 13, type: "MON-O", sleep: true, direction: 0};
+			mobAtHome = monsters.orange;
+			break;
+		case "MON-C":
+			monsters.cyan = {row: 14, col: 14, type: "MON-C", sleep: true, direction: 0};
+			mobAtHome = monsters.cyan;
+			break;
+		case "MON-P":
+			monsters.pink = {row: 14, col: 15, type: "MON-P", sleep: true, direction: 0};
+			mobAtHome = monsters.pink;
+			break;
+	}
+	setCell(mobAtHome);
+	drawCell(mobAtHome.row, mobAtHome.col);
+}
+
 function movePackman() {
 	var nextCell = {row: packman.row, col: packman.col};
 	var canMove = true;
@@ -193,17 +270,17 @@ function movePackman() {
 	switch(playground.cells[nextCell.row][nextCell.col]) {
 		case "EMPTY":
 			break;
-		case "MON_R":
-		case "MON_O":
-		case "MON_P":
-		case "MON_C":
-			if(!powerMode) {
-				fail();
-				canMove = false;
-			} else {
-				score += 100;
-				//TODO remove the eaten monster
-			}
+		case "MON-R":
+			meeting(monsters.red);
+			break;
+		case "MON-O":
+			meeting(monsters.orange);
+			break;
+		case "MON-P":
+			meeting(monsters.pink);
+			break;
+		case "MON-C":
+			meeting(monsters.cyan);
 			break;
 		case "WALL":
 			canMove = false;
@@ -212,7 +289,7 @@ function movePackman() {
 			score += 5;
 			foodCount--;
 			if(foodCount <= 0) {
-				win()
+				win();
 			}
 			break;
 		case "POWER":
@@ -228,8 +305,16 @@ function movePackman() {
 	}
 }
 
+function meeting(mob) {
+	if(!powerMode) {
+		loose();
+	} else {
+		goHome(mob);
+	}
+}
+
 function win() {
-	alert('Nyertel.');
+	alert('Nyertel. Pontszamod: ' + score);
 	clearInterval(timer);
 }
 
