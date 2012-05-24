@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<body style="background: #102030">
+<body style="background: #000">
 
 <div style="width: 360px; height: 420px; margin: 20px auto">
 	<canvas id="myCanvas" width="360px" height="420px" style="border: none;">
@@ -9,26 +9,101 @@
 </div>
 
 <script type="text/javascript">
-var imageStore = {
+imageStore = {
 	map: {src: "image/map2.png"},
 	food: {src: "image/food.png"},
-	power: {src: "image/power.png"}
+	power: {src: "image/power.png"},
+	packmanLeft: {src: "image/packman-left.png"},
+	packmanRight: {src: "image/packman-right.png"},
+	packmanUp: {src: "image/packman-up.png"},
+	packmanDown: {src: "image/packman-down.png"},
+	mobRed: {src: "image/red.png"},
+	mobOrange: {src: "image/orange.png"},
+	mobCyan: {src: "image/cyan.png"},
+	mobPink: {src: "image/pink.png"}
 };
 
-var backgroundImage = new Image();
 var canvas = document.getElementById("myCanvas");
-var ctx = canvas.getContext("2d");
+ctx = canvas.getContext("2d");
+playground = initPlayground();
+powerMode = false;
+score = 0;
+packman = {row: 23, col: 14, type: "PMAN-L"};
+monsters = {
+	red:    {row: 14, col: 12, type: "MON-R", sleep: true},
+	orange: {row: 14, col: 13, type: "MON-O", sleep: true},
+	cyan:   {row: 14, col: 14, type: "MON-C", sleep: true},
+	pink:   {row: 14, col: 15, type: "MON-P", sleep: true}
+};
+initCells(playground);
+foodCount = countFood();
+
+document.onkeydown = function(e) {
+	e = e || event; // "real browsers" || IE6/7.
+	switch (e.keyCode) {
+		case 37: 
+			packman.type = "PMAN-L";
+			break;
+		case 38:
+			packman.type = "PMAN-U";
+			break;
+		case 39:
+			packman.type = "PMAN-R";
+			break;
+		case 40:
+			packman.type = "PMAN-D";
+			break;
+	}
+}
 
 loadImages(imageStore, function() {
 	ctx.drawImage(imageStore.map.image, 0, 0);
-	var playground = initPlayground();
-	initCells(playground);
 	for(var i = 0; i < playground.height; ++i) {
 		for(var j = 0; j < playground.width; ++j) {
-			drawCell(ctx, imageStore, playground.cells, i, j);
+			drawCell(i, j);
 		}
 	}
+	timer = setInterval(movePackman, 400);
+	mobActivator = setInterval(activateMob, 3000);
 });
+
+function activateMob() {
+	var mob = null;
+	for(cur in monsters) {
+		if(monsters[cur].sleep) {
+			mob = monsters[cur];
+			break;
+		}
+	}
+	if(mob) {
+		clearCell(mob.row, mob.col);
+		drawCell(mob.row, mob.col + 1);
+		drawCell(mob.row, mob.col - 1);
+		mob.row = 11;
+		mob.col = 13;
+		mob.sleep = false;
+		setCell(mob);
+		drawCell(mob.row, mob.col);
+	} else {
+		clearInterval(mobActivator);
+	}
+}
+
+function setCell(obj) {
+	playground.cells[obj.row][obj.col] = obj.type
+}
+
+function countFood() {
+	var count = 0;
+	for(var i = 0; i < playground.height; ++i) {
+		for(var j = 0; j < playground.width; ++j) {
+			if(playground.cells[i][j]=="FOOD") {
+				++count;
+			}
+		}
+	}
+	return count;
+}
 
 function loadImages(imageStore, callback) {
 	var loadedImages = 0;
@@ -45,25 +120,148 @@ function loadImages(imageStore, callback) {
 	}
 }
 
-function drawCell(ctx, imageStore, matrix, row, col) {
+function drawCell(row, col) {
+	var matrix = playground.cells
 	switch(matrix[row][col]) {
-		case "FOOD": drawFood(ctx, imageStore, row, col); break;
-		case "POWER": drawPower(ctx, imageStore, row, col); break;
+		case "FOOD": 
+			drawFood(row, col); 
+			break;
+		case "POWER": 
+			drawPower(row, col); 
+			break;
+		case "PMAN-L": 
+			drawPackman(imageStore.packmanLeft.image, row, col);
+			break;
+		case "PMAN-R": 
+			drawPackman(imageStore.packmanRight.image, row, col);
+			break;
+		case "PMAN-U": 
+			drawPackman(imageStore.packmanUp.image, row, col);
+			break;
+		case "PMAN-D": 
+			drawPackman(imageStore.packmanDown.image, row, col);
+			break;
+		case "MON-R":
+			drawMonster(imageStore.mobRed.image, row, col);
+			break;
+		case "MON-O":
+			drawMonster(imageStore.mobOrange.image, row, col);
+			break;
+		case "MON-C":
+			drawMonster(imageStore.mobCyan.image, row, col);
+			break;
+		case "MON-P":
+			drawMonster(imageStore.mobPink.image, row, col);
+			break;
 	}
 }
 
-function drawFood(ctx, imageStore, row, col) {
-	var offX = col * 12 + 12;
-	var offY = row * 12 + 13;
+function clearCell(row, col) {
+	playground.cells[row][col] = "EMPTY";
+	ctx.clearRect(col * 12 + 8, row * 12 + 8, 20, 20);
+}
+
+function movePackman() {
+	var nextCell = {row: packman.row, col: packman.col};
+	var canMove = true;
+	switch(packman.type) {
+		case "PMAN-L":
+			--nextCell.col;
+			if(nextCell.col < 0) {
+				nextCell.col = playground.width;
+			}
+			break;
+		case "PMAN-R":
+			++nextCell.col;
+			if(nextCell.col >= playground.width) {
+				nextCell.col = 0;
+			}
+			break;
+		case "PMAN-U":
+			--nextCell.row;
+			if(nextCell.row < 0) {
+				nextCell.row = playground.height;
+			}
+			break;
+		case "PMAN-D":
+			++nextCell.row
+			if(nextCell.row >= playground.height) {
+				nextCell.row = 0;
+			}
+			break;
+	}
+	switch(playground.cells[nextCell.row][nextCell.col]) {
+		case "EMPTY":
+			break;
+		case "MON_R":
+		case "MON_O":
+		case "MON_P":
+		case "MON_C":
+			if(!powerMode) {
+				fail();
+				canMove = false;
+			} else {
+				score += 100;
+				//TODO remove the eaten monster
+			}
+			break;
+		case "WALL":
+			canMove = false;
+			break;
+		case "FOOD":
+			score += 5;
+			foodCount--;
+			if(foodCount <= 0) {
+				win()
+			}
+			break;
+		case "POWER":
+			powerMode = true;
+			break;
+	}
+	if(canMove) {
+		clearCell(packman.row, packman.col);
+		packman.col = nextCell.col;
+		packman.row = nextCell.row;
+		playground.cells[packman.row][packman.col] = packman.type;
+		drawCell(packman.row, packman.col);
+	}
+}
+
+function win() {
+	alert('Nyertel.');
+	clearInterval(timer);
+}
+
+function loose() {
+	alert('Vesztettel.');
+	clearInterval(timer);
+}
+
+function drawFood(row, col) {
+	var offX = col * 12 + 13;
+	var offY = row * 12 + 12;
 	ctx.drawImage(imageStore.food.image, offX, offY);
 }
 
-function drawPower(ctx, imageStore, row, col) {
-	var offX = col * 12 + 12;
-	var offY = row * 12 + 13;
+function drawPower(row, col) {
+	var offX = col * 12 + 13;
+	var offY = row * 12 + 12;
 	ctx.drawImage(imageStore.power.image, offX, offY);
 }
- 
+
+function drawPackman(image, row, col) {
+	var offX = col * 12 + 8;
+	var offY = row * 12 + 8;
+	ctx.drawImage(image, offX, offY);
+}
+
+function drawMonster(image, row, col) {
+	var offX = col * 12 + 8;
+	var offY = row * 12 + 8;
+	ctx.drawImage(image, offX, offY);
+}
+
 function initPlayground() {
 	var playground = { width: 28, height: 31};
 	playground.cells = new Array(playground.height);
@@ -117,6 +315,10 @@ function initCells(playground) {
 				case "P": cells[i][j] = "POWER"; break;
 			}
 		}
+	}
+	setCell(packman);
+	for(var mob in monsters) {
+		setCell(monsters[mob]);
 	}
 }
 
