@@ -60,7 +60,7 @@ document.onkeydown = function(e) {
 	drawCell(pacman.row, pacman.col);
 }
 
-loadImages(imageStore, function() {
+loadImages(function() {
 	ctx.drawImage(imageStore.map.image, 0, 0);
 	for(var i = 0; i < playground.height; ++i) {
 		for(var j = 0; j < playground.width; ++j) {
@@ -102,14 +102,14 @@ function countFood() {
 	return count;
 }
 
-function loadImages(imageStore, callback) {
+function loadImages(callback) {
 	var loadedImages = 0;
 	var numImages = Object.keys(imageStore).length;
 	for(var elem in imageStore) {
 		var current = imageStore[elem];
 		current.image = new Image();
 		current.image.onload = function() {
-			if(++loadedImages >= numImages) {
+			if(++loadedImages == numImages) {
 				callback();
 			}
 		};
@@ -203,7 +203,7 @@ function moveMonsters() {
 						break;
 					case 1:
 						++targetRow;
-						if(targetRow >= playground.height) {
+						if(targetRow == playground.height) {
 							targetRow = 0;
 						}
 						break;
@@ -215,7 +215,7 @@ function moveMonsters() {
 						break;
 					case 3:
 						++targetCol;
-						if(targetCol >= playground.width) {
+						if(targetCol == playground.width) {
 							targetCol = 0;
 						}
 						break;
@@ -278,7 +278,7 @@ function movePacman() {
 			break;
 		case "PMAN-R":
 			++nextCell.col;
-			if(nextCell.col >= playground.width) {
+			if(nextCell.col == playground.width) {
 				nextCell.col = 0;
 			}
 			break;
@@ -290,7 +290,7 @@ function movePacman() {
 			break;
 		case "PMAN-D":
 			++nextCell.row
-			if(nextCell.row >= playground.height) {
+			if(nextCell.row == playground.height) {
 				nextCell.row = 0;
 			}
 			break;
@@ -304,7 +304,7 @@ function movePacman() {
 		case "FOOD":
 			score += 5;
 			foodCount--;
-			if(foodCount <= 0) {
+			if(foodCount == 0) {
 				win();
 			}
 			break;
