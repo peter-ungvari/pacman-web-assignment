@@ -13,10 +13,10 @@ imageStore = {
 	map: {src: "image/map3.png"},
 	food: {src: "image/food.png"},
 	power: {src: "image/power.png"},
-	packmanLeft: {src: "image/packman-left.png"},
-	packmanRight: {src: "image/packman-right.png"},
-	packmanUp: {src: "image/packman-up.png"},
-	packmanDown: {src: "image/packman-down.png"},
+	pacmanLeft: {src: "image/pacman-left.png"},
+	pacmanRight: {src: "image/pacman-right.png"},
+	pacmanUp: {src: "image/pacman-up.png"},
+	pacmanDown: {src: "image/pacman-down.png"},
 	mobRed: {src: "image/red.png"},
 	mobOrange: {src: "image/orange.png"},
 	mobCyan: {src: "image/cyan.png"},
@@ -30,7 +30,7 @@ playground = initPlayground();
 powerMode = false;
 powerTimeout = null;
 score = 0;
-packman = {row: 23, col: 14, type: "PMAN-L"};
+pacman = {row: 23, col: 14, type: "PMAN-L"};
 monsters = {
 	red:    {row: 14, col: 12, type: "MON-R", sleep: true, direction: 0},
 	orange: {row: 14, col: 13, type: "MON-O", sleep: true, direction: 0},
@@ -44,20 +44,20 @@ document.onkeydown = function(e) {
 	e = e || event; // "real browsers" || IE6/7.
 	switch (e.keyCode) {
 		case 37: 
-			packman.type = "PMAN-L";
+			pacman.type = "PMAN-L";
 			break;
 		case 38:
-			packman.type = "PMAN-U";
+			pacman.type = "PMAN-U";
 			break;
 		case 39:
-			packman.type = "PMAN-R";
+			pacman.type = "PMAN-R";
 			break;
 		case 40:
-			packman.type = "PMAN-D";
+			pacman.type = "PMAN-D";
 			break;
 	}
-	clearCell(packman.row, packman.col);
-	drawCell(packman.row, packman.col);
+	clearCell(pacman.row, pacman.col);
+	drawCell(pacman.row, pacman.col);
 }
 
 loadImages(imageStore, function() {
@@ -128,23 +128,23 @@ function drawCell(row, col) {
 			drawPower(row, col); 
 			break;
 	}
-	if(packman.row == row && packman.col == col) {
-		switch(packman.type) {
+	if(pacman.row == row && pacman.col == col) {
+		switch(pacman.type) {
 			case "PMAN-L":
-				image = imageStore.packmanLeft.image;
-				drawPackman(image, row, col);
+				image = imageStore.pacmanLeft.image;
+				drawPacman(image, row, col);
 				break;
 			case "PMAN-R":
-				image = imageStore.packmanRight.image;
-				drawPackman(image, row, col);
+				image = imageStore.pacmanRight.image;
+				drawPacman(image, row, col);
 				break;
 			case "PMAN-U":
-				image = imageStore.packmanUp.image;
-				drawPackman(image, row, col);
+				image = imageStore.pacmanUp.image;
+				drawPacman(image, row, col);
 				break;
 			case "PMAN-D":
-				image = imageStore.packmanDown.image;
-				drawPackman(image, row, col);
+				image = imageStore.pacmanDown.image;
+				drawPacman(image, row, col);
 				break;
 		}
 	}
@@ -179,7 +179,7 @@ function clearCell(row, col) {
 }
 
 function move() {
-	movePackman();
+	movePacman();
 	moveMonsters();
 }
 
@@ -226,7 +226,7 @@ function moveMonsters() {
 					mob.direction = (mob.direction + Math.floor(Math.random() * 3) + 1) % 4;
 				}
 			}
-			if(packman.row == targetRow && packman.col == targetCol) {
+			if(pacman.row == targetRow && pacman.col == targetCol) {
 				meeting(mob);
 			} else {
 				var oldRow = mob.row;
@@ -266,10 +266,10 @@ function goHome(mob) {
 	drawCell(mobAtHome.row, mobAtHome.col);
 }
 
-function movePackman() {
-	var nextCell = {row: packman.row, col: packman.col};
+function movePacman() {
+	var nextCell = {row: pacman.row, col: pacman.col};
 	var canMove = true;
-	switch(packman.type) {
+	switch(pacman.type) {
 		case "PMAN-L":
 			--nextCell.col;
 			if(nextCell.col < 0) {
@@ -337,11 +337,11 @@ function movePackman() {
 		}
 	}
 	if(canMove) {
-		clearCell(packman.row, packman.col);
-		packman.col = nextCell.col;
-		packman.row = nextCell.row;
-		playground.cells[packman.row][packman.col] = "EMPTY";
-		drawCell(packman.row, packman.col);
+		clearCell(pacman.row, pacman.col);
+		pacman.col = nextCell.col;
+		pacman.row = nextCell.row;
+		playground.cells[pacman.row][pacman.col] = "EMPTY";
+		drawCell(pacman.row, pacman.col);
 	}
 }
 
@@ -377,7 +377,7 @@ function drawPower(row, col) {
 	ctx.drawImage(imageStore.power.image, offX, offY);
 }
 
-function drawPackman(image, row, col) {
+function drawPacman(image, row, col) {
 	var offX = col * 12 + 8;
 	var offY = row * 12 + 8;
 	ctx.drawImage(image, offX, offY);
